@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dokr: app folders for your Mac's Dock</title>
+		<meta name="description" content="Dokr adds iOS-style app folders to the macOS Dock. Group apps into a folder, pin it to the Dock, and click it to open a grid of those apps." />
+		<meta property="og:title" content="Dokr: app folders for your Mac's Dock" />
+		<meta property="og:description" content="Group apps into folders, pin them to your Dock, and click to open a grid. For macOS 13 Ventura or later." />
+		<meta property="og:image" content="assets/icon-256.png" />
+		<meta name="theme-color" content="#13232b" />
+		<link rel="icon" type="image/png" href="assets/favicon.png" />
+		<link rel="apple-touch-icon" href="assets/icon-256.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap" rel="stylesheet" />
+		<style>
+			:root {
+				--ink: #13232b;
+				--deep: #0f1c22;
+				--slate: #1c3441;
+				--teal: #2a5266;
+				--frost: #e6eff2;
+				--mist: #94abb5;
+				--glass: #9ed8c8;
+				--line: rgba(230, 239, 242, 0.12);
+				--ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+				--mono: ui-monospace, 'SF Mono', Menlo, monospace;
+			}
+
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+			}
+			html {
+				-webkit-text-size-adjust: 100%;
+				scroll-behavior: smooth;
+			}
+			@media (prefers-reduced-motion: reduce) {
+				html {
+					scroll-behavior: auto;
+				}
+			}
+			body {
+				margin: 0;
+				background: var(--ink);
+				color: var(--frost);
+				font-family:
+					'Instrument Sans',
+					-apple-system,
+					BlinkMacSystemFont,
+					sans-serif;
+				font-size: 17px;
+				line-height: 1.6;
+				font-variation-settings: 'wdth' 100;
+				-webkit-font-smoothing: antialiased;
+			}
+			a {
+				color: inherit;
+			}
+			:focus-visible {
+				outline: 2px solid var(--glass);
+				outline-offset: 3px;
+				border-radius: 6px;
+			}
+			button {
+				font: inherit;
+				color: inherit;
+			}
+			code {
+				font-family: var(--mono);
+				font-size: 0.88em;
+			}
+			.wrap {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 0 clamp(20px, 4vw, 40px);
+			}
+
+			h1,
+			h2,
+			h3 {
+				margin: 0;
+				font-weight: 600;
+				font-variation-settings: 'wdth' 78;
+			}
+			h1 {
+				font-size: clamp(3.1rem, 8.4vw, 7rem);
+				line-height: 0.92;
+				letter-spacing: -0.035em;
+			}
+			h2 {
+				font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+				line-height: 1;
+				letter-spacing: -0.025em;
+			}
+			h3 {
+				font-size: 1.3rem;
+				line-height: 1.2;
+				letter-spacing: -0.01em;
+				font-variation-settings: 'wdth' 88;
+			}
+			p {
+				margin: 0;
+			}
+			.muted {
+				color: var(--mist);
+			}
+
+			/* Nav */
+			nav {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 22px 0;
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				font-weight: 600;
+				font-size: 1.15rem;
+				text-decoration: none;
+			}
+			.brand img {
+				width: 30px;
+				height: 30px;
+			}
+			.nav-links {
+				display: flex;
+				gap: 26px;
+				font-size: 0.95rem;
+			}
+			.nav-links a {
+				color: var(--mist);
+				text-decoration: none;
+			}
+			.nav-links a:hover {
+				color: var(--frost);
+			}
+			@media (max-width: 720px) {
+				.nav-links a:not(.gh) {
+					display: none;
+				}
+			}
+
+			/* Buttons */
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				height: 50px;
+				padding: 0 22px;
+				border-radius: 14px;
+				border: 0;
+				background: var(--frost);
+				color: var(--ink);
+				font-weight: 600;
+				font-size: 1rem;
+				text-decoration: none;
+				cursor: pointer;
+				transition: background-color 0.15s;
+			}
+			.btn:hover {
+				background: #fff;
+			}
+			.btn svg {
+				width: 18px;
+				height: 18px;
+				margin-top: -2px;
+			}
+			.cmd {
+				display: inline-flex;
+				align-items: center;
+				gap: 4px;
+				height: 50px;
+				padding: 0 6px 0 18px;
+				border-radius: 14px;
+				background: rgba(230, 239, 242, 0.06);
+				border: 1px solid var(--line);
+				font-family: var(--mono);
+				font-size: 0.85rem;
+				color: var(--frost);
+				max-width: 100%;
+				min-width: 0;
+			}
+			.cmd code {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				font-size: inherit;
+			}
+			.cmd code::before {
+				content: '$ ';
+				color: var(--mist);
+			}
+			.copy {
+				flex: none;
+				height: 38px;
+				min-width: 70px;
+				padding: 0 12px;
+				margin-left: 8px;
+				border-radius: 10px;
+				border: 0;
+				background: rgba(230, 239, 242, 0.08);
+				font-family: 'Instrument Sans', sans-serif;
+				font-size: 0.85rem;
+				font-weight: 600;
+				cursor: pointer;
+			}
+			.copy:hover {
+				background: rgba(230, 239, 242, 0.16);
+			}
+			.copy.done {
+				color: var(--glass);
+			}
+
+			/* Hero */
+			.hero {
+				display: grid;
+				grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+				gap: 24px 56px;
+				align-items: end;
+				padding: clamp(40px, 8vw, 96px) 0 clamp(36px, 5vw, 56px);
+			}
+			.hero-side {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr);
+				gap: 26px;
+				padding-bottom: 8px;
+			}
+			.lede {
+				font-size: 1.18rem;
+				line-height: 1.55;
+				color: #c6d6dc;
+				max-width: 32em;
+			}
+			.ctas {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 12px;
+			}
+			.req {
+				font-size: 0.9rem;
+				color: var(--mist);
+			}
+			@media (max-width: 860px) {
+				.hero {
+					grid-template-columns: minmax(0, 1fr);
+				}
+			}
+
+			/* Stage: a mock desktop with a working Dock */
+			.stage {
+				position: relative;
+				container-type: inline-size;
+				aspect-ratio: 16 / 9.4;
+				min-height: 460px;
+				border-radius: 22px;
+				overflow: hidden;
+				background:
+					radial-gradient(70% 90% at 12% 8%, rgba(126, 190, 196, 0.55), transparent 60%), radial-gradient(60% 80% at 92% 30%, rgba(62, 112, 140, 0.7), transparent 65%),
+					radial-gradient(90% 70% at 50% 110%, rgba(20, 44, 56, 0.9), transparent 70%), linear-gradient(150deg, #3a6a7c, #1d3a49 60%, #142a35);
+				box-shadow:
+					0 0 0 1px var(--line),
+					0 40px 80px -40px rgba(0, 0, 0, 0.7);
+				user-select: none;
+				-webkit-user-select: none;
+			}
+			.wall-mark {
+				position: absolute;
+				right: -4%;
+				top: 12%;
+				width: 42%;
+				aspect-ratio: 1;
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 9%;
+				opacity: 0.06;
+				pointer-events: none;
+			}
+			.wall-mark span {
+				border: 2px solid #fff;
+				border-radius: 26%;
+			}
+			.menubar {
+				position: absolute;
+				inset: 0 0 auto;
+				height: 28px;
+				display: flex;
+				align-items: center;
+				gap: 18px;
+				padding: 0 16px;
+				font-size: 13px;
+				background: rgba(14, 28, 35, 0.35);
+				backdrop-filter: blur(20px);
+				-webkit-backdrop-filter: blur(20px);
+			}
+			.menubar b {
+				font-weight: 600;
+			}
+			.menubar .clock {
+				margin-left: auto;
+			}
+			@container (max-width: 560px) {
+				.menubar .opt {
+					display: none;
+				}
+			}
+
+			.switch {
+				position: absolute;
+				top: 44px;
+				left: 16px;
+				display: flex;
+				padding: 3px;
+				border-radius: 11px;
+				background: rgba(14, 28, 35, 0.45);
+				backdrop-filter: blur(20px);
+				-webkit-backdrop-filter: blur(20px);
+				border: 1px solid rgba(255, 255, 255, 0.12);
+			}
+			.switch button {
+				border: 0;
+				background: none;
+				height: 32px;
+				padding: 0 14px;
+				border-radius: 8px;
+				font-size: 0.88rem;
+				font-weight: 600;
+				color: #c6d6dc;
+				cursor: pointer;
+			}
+			.switch button[aria-pressed='true'] {
+				background: rgba(230, 239, 242, 0.9);
+				color: var(--ink);
+			}
+
+			.dock {
+				--icon: clamp(8px, calc((100cqw - 64px) / var(--n, 12) - 5px), 56px);
+				position: absolute;
+				left: 50%;
+				bottom: 8px;
+				transform: translateX(-50%);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 5px;
+				padding: 6px 6px 10px;
+				border-radius: calc(var(--icon) * 0.3 + 6px);
+				background: rgba(225, 238, 242, 0.16);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				backdrop-filter: blur(26px) saturate(1.6);
+				-webkit-backdrop-filter: blur(26px) saturate(1.6);
+				white-space: nowrap;
+			}
+			.dock .sep {
+				flex: none;
+				width: 1px;
+				height: calc(var(--icon) * 0.8);
+				margin: 0 3px;
+				background: rgba(255, 255, 255, 0.35);
+			}
+
+			/* App icons */
+			.tile {
+				position: relative;
+				flex: none;
+				display: grid;
+				place-items: center;
+				width: var(--icon);
+				height: var(--icon);
+				border-radius: 23%;
+				background: linear-gradient(165deg, var(--a), var(--b));
+				box-shadow:
+					inset 0 1px 0 rgba(255, 255, 255, 0.35),
+					0 2px 5px rgba(5, 15, 20, 0.25);
+			}
+			.tile svg,
+			.cell svg {
+				width: 56%;
+				height: 56%;
+				fill: none;
+				stroke: var(--ink-c, #fff);
+				stroke-width: 1.9;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.running::after {
+				content: '';
+				position: absolute;
+				left: 50%;
+				bottom: -7px;
+				width: 4px;
+				height: 4px;
+				margin-left: -2px;
+				border-radius: 50%;
+				background: rgba(255, 255, 255, 0.9);
+			}
+			.tile.bounce {
+				animation: bounce 1s var(--ease-out);
+			}
+			@keyframes bounce {
+				0%,
+				50%,
+				100% {
+					transform: none;
+				}
+				25%,
+				75% {
+					transform: translateY(-40%);
+				}
+			}
+
+			.folder {
+				position: relative;
+				flex: none;
+				width: var(--icon);
+				height: var(--icon);
+				padding: 0;
+				border: 0;
+				background: none;
+				cursor: pointer;
+				border-radius: 23%;
+			}
+			.folder-bg {
+				position: absolute;
+				inset: 0;
+				border-radius: 23%;
+				background: rgba(236, 244, 246, 0.3);
+				box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+			}
+			.folder[aria-expanded='true'] .folder-bg {
+				background: rgba(236, 244, 246, 0.45);
+			}
+			.folder:active .folder-bg {
+				filter: brightness(0.85);
+			}
+			.mini {
+				position: absolute;
+				inset: 13%;
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				grid-template-rows: repeat(3, 1fr);
+				gap: 7%;
+			}
+			.cell {
+				display: grid;
+				place-items: center;
+				border-radius: 26%;
+				background: linear-gradient(165deg, var(--a), var(--b));
+			}
+			.cell svg {
+				stroke-width: 2.6;
+			}
+
+			/* Popup, like a Dock stack in grid view */
+			.popup {
+				--pop-icon: clamp(40px, 6.4cqw, 64px);
+				position: absolute;
+				left: 0;
+				bottom: 100px;
+				z-index: 2;
+				padding: 14px 16px 12px;
+				border-radius: 24px;
+				background: rgba(30, 54, 66, 0.6);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				backdrop-filter: blur(30px) saturate(1.7);
+				-webkit-backdrop-filter: blur(30px) saturate(1.7);
+				box-shadow: 0 24px 50px -16px rgba(4, 14, 18, 0.6);
+				transform-origin: var(--tail, 50%) calc(100% + 12px);
+				opacity: 0;
+				visibility: hidden;
+				transform: translateY(10px) scale(0.9);
+				transition:
+					opacity 0.14s,
+					transform 0.14s,
+					visibility 0s 0.14s;
+			}
+			.popup.is-open {
+				opacity: 1;
+				visibility: visible;
+				transform: none;
+				transition:
+					opacity 0.2s,
+					transform 0.32s var(--ease-out),
+					visibility 0s;
+			}
+			.popup::after {
+				content: '';
+				position: absolute;
+				left: var(--tail, 50%);
+				bottom: -8px;
+				width: 16px;
+				height: 16px;
+				margin-left: -8px;
+				transform: rotate(45deg);
+				border-radius: 0 0 4px 0;
+				background: rgba(30, 54, 66, 0.6);
+				border: solid rgba(255, 255, 255, 0.2);
+				border-width: 0 1px 1px 0;
+				backdrop-filter: blur(30px);
+				-webkit-backdrop-filter: blur(30px);
+			}
+			.popup-title {
+				text-align: center;
+				font-weight: 600;
+				font-size: 0.95rem;
+				margin-bottom: 8px;
+			}
+			.popup-grid {
+				display: grid;
+				grid-template-columns: repeat(3, auto);
+				gap: 4px 6px;
+			}
+			.pop-app {
+				display: grid;
+				justify-items: center;
+				gap: 12px;
+				width: calc(var(--pop-icon) + 30px);
+				padding: 8px 2px 6px;
+				border: 0;
+				border-radius: 12px;
+				background: none;
+				cursor: pointer;
+			}
+			.pop-app:hover {
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.pop-app .tile {
+				--icon: var(--pop-icon);
+			}
+			.pop-app .tile.running::after {
+				bottom: -8px;
+			}
+			.pop-app span:last-child {
+				font-size: 0.78rem;
+				line-height: 1.1;
+				white-space: nowrap;
+			}
+			@media (max-width: 780px) {
+				.stage {
+					aspect-ratio: auto;
+					min-height: 0;
+					height: 500px;
+				}
+			}
+			.stage-note {
+				margin-top: 14px;
+				font-size: 0.9rem;
+				color: var(--mist);
+			}
+
+			/* Sections */
+			section {
+				padding: clamp(80px, 11vw, 140px) 0 0;
+			}
+			.section-head {
+				display: grid;
+				gap: 16px;
+				max-width: 40em;
+				margin-bottom: clamp(36px, 5vw, 56px);
+			}
+			.section-head p {
+				font-size: 1.1rem;
+				color: #c6d6dc;
+			}
+
+			/* How it works */
+			.how {
+				display: grid;
+				grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+				gap: clamp(32px, 5vw, 72px);
+				align-items: start;
+			}
+			.steps {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 34px;
+				counter-reset: step;
+			}
+			.steps li {
+				display: grid;
+				grid-template-columns: 52px 1fr;
+				gap: 4px 14px;
+				counter-increment: step;
+			}
+			.steps li::before {
+				content: counter(step);
+				grid-row: span 2;
+				width: 40px;
+				height: 40px;
+				border-radius: 12px;
+				display: grid;
+				place-items: center;
+				background: var(--slate);
+				box-shadow: inset 0 0 0 1px var(--line);
+				font-weight: 600;
+				font-variation-settings: 'wdth' 80;
+				font-size: 1.15rem;
+			}
+			.steps p {
+				color: #b8cad1;
+			}
+			@media (max-width: 900px) {
+				.how {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			/* Editor mock */
+			.window {
+				border-radius: 14px;
+				overflow: hidden;
+				background: #1a2c35;
+				font-size: 14px;
+				box-shadow:
+					0 0 0 1px rgba(255, 255, 255, 0.1),
+					0 40px 80px -30px rgba(0, 0, 0, 0.7);
+			}
+			.titlebar {
+				height: 40px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 0 14px;
+				background: #20343e;
+				border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+			}
+			.titlebar i {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #ff5f57;
+			}
+			.titlebar i:nth-child(2) {
+				background: #febc2e;
+			}
+			.titlebar i:nth-child(3) {
+				background: #28c840;
+			}
+			.titlebar span {
+				margin-left: 10px;
+				font-weight: 600;
+				color: #c6d6dc;
+				font-size: 13px;
+			}
+			.win-body {
+				display: grid;
+				grid-template-columns: 170px minmax(0, 1fr);
+				min-height: 380px;
+			}
+			.sidebar {
+				padding: 12px 8px;
+				background: rgba(0, 0, 0, 0.16);
+				border-right: 1px solid rgba(0, 0, 0, 0.25);
+				display: grid;
+				align-content: start;
+				gap: 2px;
+			}
+			.side-row {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 6px 8px;
+				border-radius: 8px;
+				color: #d5e2e7;
+			}
+			.side-row.sel {
+				background: rgba(126, 190, 196, 0.22);
+			}
+			.side-row .folder {
+				--icon: 24px;
+				cursor: default;
+			}
+			.side-row .folder-bg {
+				background: rgba(236, 244, 246, 0.2);
+			}
+			.side-add {
+				margin-top: 8px;
+				padding: 6px 8px;
+				color: var(--mist);
+			}
+			.pane {
+				display: grid;
+				grid-template-rows: auto auto 1fr auto;
+			}
+			.pane-top {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 14px 16px 10px;
+			}
+			.pane-top .name {
+				font-size: 1.15rem;
+				font-weight: 600;
+				flex: 1;
+			}
+			.field {
+				height: 30px;
+				padding: 0 10px;
+				border-radius: 8px;
+				background: rgba(0, 0, 0, 0.22);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				display: flex;
+				align-items: center;
+				color: var(--mist);
+				font-size: 13px;
+			}
+			.pane-tools {
+				display: flex;
+				gap: 8px;
+				padding: 0 16px 10px;
+			}
+			.pane-tools .field:first-child {
+				flex: 1;
+			}
+			.list {
+				margin: 0 16px;
+				border-radius: 10px;
+				background: rgba(0, 0, 0, 0.14);
+				padding: 4px;
+			}
+			.list-row {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				padding: 6px 10px;
+				border-radius: 7px;
+			}
+			.list-row:nth-child(even) {
+				background: rgba(255, 255, 255, 0.03);
+			}
+			.list-row .tile {
+				--icon: 26px;
+				box-shadow: none;
+			}
+			.list-row .path {
+				margin-left: auto;
+				min-width: 0;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				color: var(--mist);
+				font-size: 12px;
+				font-family: var(--mono);
+			}
+			.list-row .grip {
+				width: 12px;
+				height: 10px;
+				background:
+					linear-gradient(var(--mist) 0 0) 0 0 / 100% 2px,
+					linear-gradient(var(--mist) 0 0) 0 4px / 100% 2px,
+					linear-gradient(var(--mist) 0 0) 0 8px / 100% 2px;
+				background-repeat: no-repeat;
+				opacity: 0.6;
+			}
+			.pane-foot {
+				display: flex;
+				align-items: center;
+				gap: 14px;
+				white-space: nowrap;
+				padding: 14px 16px;
+				margin-top: 12px;
+				border-top: 1px solid rgba(255, 255, 255, 0.06);
+				color: #c6d6dc;
+				font-size: 13px;
+			}
+			.toggle {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.toggle i {
+				width: 28px;
+				height: 16px;
+				border-radius: 8px;
+				background: rgba(255, 255, 255, 0.18);
+				position: relative;
+			}
+			.toggle i::after {
+				content: '';
+				position: absolute;
+				top: 2px;
+				left: 2px;
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #fff;
+			}
+			.toggle.on i {
+				background: #3b8fd9;
+			}
+			.toggle.on i::after {
+				left: 14px;
+			}
+			.apply {
+				margin-left: auto;
+				height: 30px;
+				padding: 0 14px;
+				border-radius: 8px;
+				background: #3b8fd9;
+				color: #fff;
+				font-weight: 600;
+				display: flex;
+				align-items: center;
+			}
+			@media (max-width: 620px) {
+				.win-body {
+					grid-template-columns: minmax(0, 1fr);
+				}
+				.sidebar {
+					display: none;
+				}
+				.list-row .path,
+				.pane-foot .toggle:nth-child(2) {
+					display: none;
+				}
+			}
+
+			/* Features */
+			.spots {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: clamp(28px, 3vw, 40px);
+			}
+			.spot {
+				display: grid;
+				gap: 14px;
+				align-content: start;
+			}
+			.spot p {
+				color: #b8cad1;
+			}
+			.art {
+				position: relative;
+				aspect-ratio: 4 / 3;
+				border-radius: 18px;
+				overflow: hidden;
+				margin-bottom: 8px;
+				background: radial-gradient(80% 90% at 20% 10%, rgba(126, 190, 196, 0.4), transparent 60%), linear-gradient(150deg, #33606f, #1a3442);
+				display: grid;
+				place-items: center;
+				container-type: inline-size;
+			}
+			.art-folder .folder {
+				--icon: 42cqw;
+				cursor: default;
+			}
+			.art-folder .folder-bg {
+				background: rgba(236, 244, 246, 0.28);
+				backdrop-filter: blur(10px);
+			}
+			.art-dots .popup {
+				position: static;
+				opacity: 1;
+				visibility: visible;
+				transform: none;
+				--pop-icon: 11cqw;
+				padding: 10px 12px 8px;
+			}
+			.art-dots .pop-app {
+				width: calc(var(--pop-icon) + 26px);
+				cursor: default;
+			}
+			.art-dots .pop-app:hover {
+				background: none;
+			}
+			.art-dots .popup::after {
+				left: 50%;
+			}
+
+			.art-edges {
+				place-items: center stretch;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 7%;
+				padding: 0 7%;
+				align-items: center;
+			}
+			.screen {
+				margin: 0;
+				position: relative;
+				aspect-ratio: 3 / 4;
+				border-radius: 8px;
+				background: rgba(8, 20, 26, 0.35);
+				box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+			}
+			.screen figcaption {
+				position: absolute;
+				top: calc(100% + 8px);
+				left: 0;
+				right: 0;
+				text-align: center;
+				font-size: 0.78rem;
+				color: #c6d6dc;
+			}
+			.s-dock {
+				position: absolute;
+				display: flex;
+				gap: 3px;
+				padding: 3px;
+				border-radius: 5px;
+				background: rgba(255, 255, 255, 0.22);
+			}
+			.s-dock i {
+				width: 9px;
+				height: 9px;
+				border-radius: 3px;
+				background: rgba(255, 255, 255, 0.5);
+			}
+			.s-dock i.f {
+				background: var(--glass);
+			}
+			.s-pop {
+				position: absolute;
+				display: grid;
+				grid-template-columns: repeat(3, 7px);
+				gap: 3px;
+				padding: 5px;
+				border-radius: 6px;
+				background: rgba(255, 255, 255, 0.85);
+			}
+			.s-pop b {
+				height: 7px;
+				border-radius: 2px;
+				background: var(--teal);
+			}
+			.s-pop::after {
+				content: '';
+				position: absolute;
+				width: 6px;
+				height: 6px;
+				background: inherit;
+				transform: rotate(45deg);
+			}
+			.bottom .s-dock {
+				bottom: 5px;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+			.bottom .s-pop {
+				bottom: 26px;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+			.bottom .s-pop::after {
+				bottom: -3px;
+				left: calc(50% - 3px);
+			}
+			.left .s-dock,
+			.right .s-dock {
+				top: 50%;
+				transform: translateY(-50%);
+				flex-direction: column;
+			}
+			.left .s-dock {
+				left: 5px;
+			}
+			.right .s-dock {
+				right: 5px;
+			}
+			.left .s-pop,
+			.right .s-pop {
+				top: 50%;
+				transform: translateY(-50%);
+			}
+			.left .s-pop {
+				left: 26px;
+			}
+			.right .s-pop {
+				right: 26px;
+			}
+			.left .s-pop::after {
+				left: -3px;
+				top: calc(50% - 3px);
+			}
+			.right .s-pop::after {
+				right: -3px;
+				top: calc(50% - 3px);
+			}
+
+			.more {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 0 56px;
+				margin: clamp(56px, 7vw, 88px) 0 0;
+			}
+			.more div {
+				display: grid;
+				grid-template-columns: 11em 1fr;
+				gap: 20px;
+				padding: 20px 0;
+				border-top: 1px solid var(--line);
+			}
+			.more dt {
+				font-weight: 600;
+			}
+			.more dd {
+				margin: 0;
+				color: #b8cad1;
+			}
+			@media (max-width: 900px) {
+				.spots {
+					grid-template-columns: 1fr;
+					max-width: 520px;
+				}
+				.more {
+					grid-template-columns: 1fr;
+				}
+			}
+			@media (max-width: 520px) {
+				.more div {
+					grid-template-columns: 1fr;
+					gap: 4px;
+				}
+			}
+
+			/* Safe by design */
+			.safe-band {
+				margin-top: clamp(80px, 11vw, 140px);
+				background: var(--deep);
+				border-block: 1px solid var(--line);
+			}
+			.safe-band section {
+				padding: clamp(64px, 9vw, 112px) 0;
+			}
+			.safe {
+				display: grid;
+				grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+				gap: clamp(32px, 6vw, 88px);
+			}
+			.safe .section-head {
+				margin: 0;
+				align-content: start;
+			}
+			.safe-list {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 36px 40px;
+			}
+			.safe-list > div {
+				display: grid;
+				gap: 8px;
+				align-content: start;
+			}
+			.safe-list p {
+				color: #b8cad1;
+			}
+			.safe-list .wide {
+				grid-column: 1 / -1;
+			}
+			.safe-list .cmd {
+				justify-self: start;
+			}
+			@media (max-width: 900px) {
+				.safe {
+					grid-template-columns: 1fr;
+				}
+			}
+			@media (max-width: 600px) {
+				.safe-list {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			/* FAQ */
+			.faq {
+				display: grid;
+				grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+				gap: clamp(32px, 6vw, 88px);
+			}
+			.faq .section-head {
+				align-content: start;
+			}
+			details {
+				border-top: 1px solid var(--line);
+			}
+			details:last-child {
+				border-bottom: 1px solid var(--line);
+			}
+			summary {
+				list-style: none;
+				cursor: pointer;
+				display: flex;
+				justify-content: space-between;
+				gap: 20px;
+				padding: 20px 0;
+				font-weight: 600;
+				font-size: 1.08rem;
+			}
+			summary::-webkit-details-marker {
+				display: none;
+			}
+			summary::after {
+				content: '';
+				flex: none;
+				width: 12px;
+				height: 12px;
+				margin-top: 7px;
+				background:
+					linear-gradient(var(--mist) 0 0) center / 100% 2px no-repeat,
+					linear-gradient(var(--mist) 0 0) center / 2px 100% no-repeat;
+				transition: transform 0.2s var(--ease-out);
+			}
+			details[open] summary::after {
+				transform: rotate(45deg);
+			}
+			details p {
+				padding: 0 32px 22px 0;
+				color: #b8cad1;
+				max-width: 38em;
+			}
+			@media (max-width: 900px) {
+				.faq {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			/* Final CTA + footer */
+			.final {
+				display: grid;
+				justify-items: start;
+				gap: 22px;
+				padding-bottom: clamp(80px, 10vw, 120px);
+			}
+			.final img {
+				width: 88px;
+				height: 88px;
+			}
+			.final p {
+				color: #c6d6dc;
+				font-size: 1.1rem;
+			}
+			footer {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				gap: 12px 24px;
+				padding: 28px 0 40px;
+				border-top: 1px solid var(--line);
+				font-size: 0.92rem;
+				color: var(--mist);
+			}
+			footer nav {
+				padding: 0;
+				gap: 24px;
+			}
+			footer a {
+				text-decoration: none;
+			}
+			footer a:hover {
+				color: var(--frost);
+			}
+
+			@media (prefers-reduced-motion: reduce) {
+				.popup,
+				.popup.is-open,
+				summary::after {
+					transition: none;
+				}
+				.tile.bounce {
+					animation: none;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrap">
+			<nav aria-label="Main">
+				<a class="brand" href="#"><img src="assets/favicon.png" alt="" />Dokr</a>
+				<div class="nav-links">
+					<a href="#how">How it works</a>
+					<a href="#features">Features</a>
+					<a href="#safety">Safety</a>
+					<a href="#faq">FAQ</a>
+				</div>
+			</nav>
+
+			<header class="hero">
+				<h1>App folders for your Mac's Dock.</h1>
+				<div class="hero-side">
+					<p class="lede">Group apps into folders like you do on iPhone, and pin each folder to the Dock as a single icon. Click it, and a grid of its apps opens right there.</p>
+					<div class="ctas">
+						<a class="btn download" href="https://github.com/uraxdev/homebrew-tap/releases">
+							<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+								<path
+									d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.05 1.6 2.24 2.74 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.4 1.2-2.46-.03-.01-2.3-.88-2.32-3.5zM14.2 6.13c.6-.74 1.01-1.75.9-2.77-.87.04-1.93.58-2.55 1.31-.56.64-1.05 1.68-.92 2.67.97.08 1.96-.49 2.57-1.21z"
+								/>
+							</svg>
+							Download for Mac
+						</a>
+						<div class="cmd">
+							<code>brew install --cask uraxdev/tap/dokr</code
+							><button class="copy" data-copy="brew install --cask uraxdev/tap/dokr" aria-label="Copy Homebrew install command">Copy</button>
+						</div>
+					</div>
+					<p class="req">Requires macOS 13 Ventura or later. Universal build for Apple silicon and Intel.<span class="version"></span></p>
+				</div>
+			</header>
+
+			<div class="stage" id="stage">
+				<div class="wall-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+				<div class="menubar" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+						<path
+							d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.05 1.6 2.24 2.74 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.4 1.2-2.46-.03-.01-2.3-.88-2.32-3.5zM14.2 6.13c.6-.74 1.01-1.75.9-2.77-.87.04-1.93.58-2.55 1.31-.56.64-1.05 1.68-.92 2.67.97.08 1.96-.49 2.57-1.21z"
+						/>
+					</svg>
+					<b>Finder</b><span>File</span><span>Edit</span><span class="opt">View</span><span class="opt">Go</span><span class="opt">Window</span>
+					<span class="clock">Tue 9:41</span>
+				</div>
+				<div class="switch" role="group" aria-label="Compare the Dock">
+					<button type="button" data-state="before" aria-pressed="true">Without Dokr</button>
+					<button type="button" data-state="after" aria-pressed="false">With Dokr</button>
+				</div>
+				<div class="popup" id="popup" role="dialog" aria-labelledby="popup-title">
+					<p class="popup-title" id="popup-title"></p>
+					<div class="popup-grid"></div>
+				</div>
+				<div class="dock" id="dock" aria-label="Dock"></div>
+			</div>
+			<p class="stage-note">Click a folder to open it, then launch an app. Like any running app, it gets its own Dock icon while it's open.</p>
+
+			<section id="how" aria-labelledby="how-title">
+				<div class="section-head">
+					<h2 id="how-title">From a crowded Dock to a few folders.</h2>
+					<p>Set up a folder once. After that, it's just an icon in your Dock.</p>
+				</div>
+				<div class="how">
+					<ol class="steps">
+						<li>
+							<h3>Create a folder</h3>
+							<p>Name it, then add apps from a searchable list of everything installed, the Finder picker, or by dragging them in from Finder. Drag to reorder.</p>
+						</li>
+						<li>
+							<h3>Apply to Dock</h3>
+							<p>The folder shows up in the Dock as one icon: a 3×3 grid of its first nine apps, like a folder on iPhone.</p>
+						</li>
+						<li>
+							<h3>Click it</h3>
+							<p>A grid of the folder's apps opens next to the icon. Click an app to launch it. Press Esc, click outside, or click the icon again to close it.</p>
+						</li>
+					</ol>
+
+					<div class="window" aria-label="The Dokr editor, showing the Dev folder" role="img">
+						<div class="titlebar"><i></i><i></i><i></i><span>Dokr</span></div>
+						<div class="win-body">
+							<div class="sidebar">
+								<div class="side-row sel" data-folder-icon="dev">Dev</div>
+								<div class="side-row" data-folder-icon="design">Design</div>
+								<div class="side-row" data-folder-icon="social">Social</div>
+								<div class="side-add">+ New folder</div>
+							</div>
+							<div class="pane">
+								<div class="pane-top"><span class="name">Dev</span></div>
+								<div class="pane-tools"><span class="field">Search installed apps</span><span class="field">Add from Finder…</span></div>
+								<div class="list" data-list="dev"></div>
+								<div class="pane-foot">
+									<span class="toggle on"><i></i>Show in Dock</span>
+									<span class="toggle"><i></i>Remove apps' own Dock icons</span>
+									<span class="apply">Apply to Dock</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section id="features" aria-labelledby="features-title">
+				<div class="section-head">
+					<h2 id="features-title">Built to feel like part of the Dock.</h2>
+					<p>Dokr reads your Dock settings and follows them, so folders look and behave like they shipped with macOS.</p>
+				</div>
+				<div class="spots">
+					<div class="spot">
+						<div class="art art-folder" aria-hidden="true" data-big-folder="design"></div>
+						<h3>A folder icon that shows what's inside</h3>
+						<p>The Dock icon is a live 3×3 grid of the folder's first nine apps.</p>
+					</div>
+					<div class="spot">
+						<div class="art art-edges" aria-hidden="true">
+							<figure class="screen left">
+								<span class="s-dock"><i></i><i class="f"></i><i></i></span><span class="s-pop"><b></b><b></b><b></b><b></b><b></b><b></b></span>
+								<figcaption>Left</figcaption>
+							</figure>
+							<figure class="screen bottom">
+								<span class="s-dock"><i></i><i class="f"></i><i></i></span><span class="s-pop"><b></b><b></b><b></b><b></b><b></b><b></b></span>
+								<figcaption>Bottom</figcaption>
+							</figure>
+							<figure class="screen right">
+								<span class="s-dock"><i></i><i class="f"></i><i></i></span><span class="s-pop"><b></b><b></b><b></b><b></b><b></b><b></b></span>
+								<figcaption>Right</figcaption>
+							</figure>
+						</div>
+						<h3>Follows your Dock settings</h3>
+						<p>Bottom, left or right edge, auto-hide, icon size and magnification. The popup opens from wherever your Dock is.</p>
+					</div>
+					<div class="spot">
+						<div class="art art-dots" aria-hidden="true"><div class="popup" data-dots-popup></div></div>
+						<h3>Looks like a Dock stack</h3>
+						<p>A rounded, blurred bubble with a tail pointing at the icon. Apps that are open have a dot under them, updated live, like in the Dock.</p>
+					</div>
+				</div>
+
+				<dl class="more">
+					<div>
+						<dt>Open dot on folders</dt>
+						<dd>A folder shows a dot when any of its apps is running. It's on by default, and it also makes the popup open instantly.</dd>
+					</div>
+					<div>
+						<dt>Declutter mode</dt>
+						<dd>Optionally remove the grouped apps' own Dock icons when you apply, like moving an app into a folder on iPhone.</dd>
+					</div>
+					<div>
+						<dt>Automatic backups</dt>
+						<dd>Every Dock change backs up your layout first, and the last 10 are kept.</dd>
+					</div>
+					<div>
+						<dt>Survives moved apps</dt>
+						<dd>Apps are tracked by path, with the bundle ID as a fallback, so an app you've moved still launches.</dd>
+					</div>
+					<div>
+						<dt>Starts at login</dt>
+						<dd>Folder helpers start automatically, so your folders work as soon as you sign in.</dd>
+					</div>
+					<div>
+						<dt>Native and light</dt>
+						<dd>Written in Swift with AppKit and SwiftUI.</dd>
+					</div>
+				</dl>
+			</section>
+		</div>
+
+		<div class="safe-band">
+			<div class="wrap">
+				<section id="safety" class="safe" aria-labelledby="safety-title">
+					<div class="section-head">
+						<h2 id="safety-title">Nothing patched. Nothing injected.</h2>
+						<p>Dokr only uses what macOS already provides, so it's safe to try and easy to remove.</p>
+					</div>
+					<div class="safe-list">
+						<div>
+							<h3>No private APIs</h3>
+							<p>Nothing is injected into the Dock and SIP stays on, so there's no hack for a macOS update to break.</p>
+						</div>
+						<div>
+							<h3>Each folder is a tiny app</h3>
+							<p>Dokr generates a small app for every folder and adds it to the Dock through the Dock's own preferences.</p>
+						</div>
+						<div>
+							<h3>Backed up before every change</h3>
+							<p>Your last 10 Dock layouts are saved, and you can restore any of them from Dokr.</p>
+						</div>
+						<div>
+							<h3>Leaves nothing behind</h3>
+							<p>Uninstalling with <code>--zap</code> removes your folders, backups and the login agent.</p>
+						</div>
+						<div class="wide">
+							<div class="cmd">
+								<code>brew uninstall --zap --cask dokr</code
+								><button class="copy" data-copy="brew uninstall --zap --cask dokr" aria-label="Copy Homebrew uninstall command">Copy</button>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<div class="wrap">
+			<section id="faq" class="faq" aria-labelledby="faq-title">
+				<div class="section-head">
+					<h2 id="faq-title">Questions</h2>
+					<p>Including what Dokr can't do.</p>
+				</div>
+				<div>
+					<details>
+						<summary>Will running apps still show their own Dock icon?</summary>
+						<p>Yes. macOS has no public API to hide another app's running icon, so an app you launch from a folder appears in the Dock while it's open, like any other app.</p>
+					</details>
+					<details>
+						<summary>Is it safe to try?</summary>
+						<p>Every change backs up your Dock layout first, and you can restore any backup. Dokr doesn't modify macOS itself.</p>
+					</details>
+					<details>
+						<summary>Why did macOS show “Background Items Added”?</summary>
+						<p>Folder helpers start at login, so macOS shows this notice once. You don't need to do anything.</p>
+					</details>
+					<details>
+						<summary>Can I drag a folder out of the Dock?</summary>
+						<p>Yes. If “Show in Dock” is on for that folder, Dokr adds it back the next time you apply.</p>
+					</details>
+					<details>
+						<summary>Why isn't Dokr on the Mac App Store?</summary>
+						<p>App Store apps must be sandboxed, and a sandboxed app can't write the Dock's preferences. Dokr is available as a direct download and through Homebrew instead.</p>
+					</details>
+					<details>
+						<summary>Which Macs does it run on?</summary>
+						<p>Any Mac with macOS 13 Ventura or later, on Apple silicon or Intel.</p>
+					</details>
+				</div>
+			</section>
+
+			<section class="final" aria-labelledby="final-title">
+				<img src="assets/icon-256.png" alt="" width="88" height="88" />
+				<h2 id="final-title">Fewer icons. Same apps.</h2>
+				<p>Download Dokr and sort your Dock into a few folders.</p>
+				<div class="ctas">
+					<a class="btn download" href="https://github.com/uraxdev/homebrew-tap/releases">Download for Mac</a>
+					<div class="cmd">
+						<code>brew install --cask uraxdev/tap/dokr</code><button class="copy" data-copy="brew install --cask uraxdev/tap/dokr" aria-label="Copy Homebrew install command">Copy</button>
+					</div>
+				</div>
+			</section>
+
+			<footer>
+				<span>Made by <a href="https://seifessam.com">Seif Essam</a></span>
+			</footer>
+		</div>
+
+		<script>
+			// Simple stroke glyphs for the made-up apps in the demo.
+			const G = {
+				finder: 'M4 4h16v16H4zM12 4c-1 4-1 8 0 16M8 9v1M16 9v1M8 15c2.5 1.6 5.5 1.6 8 0',
+				compass: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM15.5 8.5l-2 5-5 2 2-5z',
+				mail: 'M3 6h18v12H3zM3 7l9 6 9-6',
+				calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+				notes: 'M6 3h12v18H6zM9 8h6M9 12h6M9 16h4',
+				music: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+				bubble: 'M4 5h16v11H9l-5 4z',
+				terminal: 'M5 8l4 4-4 4M12 16h7',
+				code: 'M9 7l-5 5 5 5M15 7l5 5-5 5',
+				branch: 'M7 4v16M17 6a2 2 0 1 0 0 .01M17 8c0 5-10 3-10 8',
+				phone: 'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM11 18h2',
+				db: 'M5 6c0-1.7 3-3 7-3s7 1.3 7 3-3 3-7 3-7-1.3-7-3zM5 6v12c0 1.7 3 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3 3 7 3s7-1.3 7-3',
+				book: 'M5 4h9a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4zM5 16a4 4 0 0 1 4-4h9',
+				pulse: 'M3 12h4l2-6 4 12 2-6h6',
+				frame: 'M4 8h16M4 16h16M8 4v16M16 4v16',
+				pen: 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3',
+				drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
+				type: 'M5 7V5h14v2M12 5v14M9 19h6',
+				photo: 'M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5',
+				crop: 'M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4',
+				chat: 'M3 5h12v8H7l-4 3zM9 16h8l4 3V9h-3',
+				call: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2',
+				video: 'M3 7h12v10H3zM15 10l6-3v10l-6-3',
+				news: 'M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7 9h7M7 13h7M7 16h4',
+				gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1',
+				trash: 'M5 7h14M8 7l1 13h6l1-13M10 4h4'
+			};
+
+			// id: [name, gradient top, gradient bottom, glyph, glyph color]
+			const APPS = {
+				finder: ['Finder', '#78c6f2', '#2f7bd8', 'finder'],
+				browser: ['Browser', '#86d9f5', '#2e86de', 'compass'],
+				mail: ['Mail', '#6ab8ff', '#2560e0', 'mail'],
+				calendar: ['Calendar', '#ffffff', '#e4e9ec', 'calendar', '#e0483e'],
+				notes: ['Notes', '#ffe38a', '#f2c444', 'notes', '#6b5310'],
+				music: ['Music', '#ff8392', '#e8344e', 'music'],
+				terminal: ['Terminal', '#3d4b54', '#182127', 'terminal', '#bdf0d2'],
+				editor: ['Code', '#4aa3f0', '#1d5fc2', 'code'],
+				git: ['Git', '#f2865b', '#d9502e', 'branch'],
+				sim: ['Simulator', '#a3b0bb', '#5f6e7a', 'phone'],
+				db: ['Database', '#8693f2', '#4a55c8', 'db'],
+				docs: ['Docs', '#62d2c2', '#239987', 'book'],
+				api: ['API Client', '#bd94f4', '#7a4fd6', 'pulse'],
+				canvas: ['Canvas', '#a68bff', '#6a4ce8', 'frame'],
+				vectors: ['Vectors', '#ffb25c', '#f07c2a', 'pen'],
+				colors: ['Colors', '#ff93ba', '#e8508a', 'drop'],
+				fonts: ['Fonts', '#f1f1f1', '#c9ced3', 'type', '#2b3a42'],
+				photos: ['Photos', '#ffd36b', '#f59e3c', 'photo'],
+				capture: ['Capture', '#97abba', '#4f6474', 'crop'],
+				messages: ['Messages', '#7be07f', '#2dbe4f', 'bubble'],
+				chat: ['Team Chat', '#c77dff', '#8b3fd9', 'chat'],
+				calls: ['Calls', '#6ee7a0', '#22a55e', 'call'],
+				video: ['Video', '#6cb6ff', '#2c6cd6', 'video'],
+				news: ['News', '#ff7b72', '#e0453b', 'news'],
+				settings: ['Settings', '#b6bec5', '#727b84', 'gear'],
+				trash: ['Trash', '#eef2f4', '#b9c3c9', 'trash', '#4a5a63']
+			};
+
+			const FOLDERS = {
+				dev: { name: 'Dev', apps: ['terminal', 'editor', 'git', 'sim', 'db', 'docs', 'api'] },
+				design: { name: 'Design', apps: ['canvas', 'vectors', 'colors', 'fonts', 'photos', 'capture'] },
+				social: { name: 'Social', apps: ['messages', 'chat', 'calls', 'video', 'news'] }
+			};
+
+			const BEFORE = [
+				'finder',
+				'browser',
+				'mail',
+				'messages',
+				'terminal',
+				'editor',
+				'calendar',
+				'canvas',
+				'chat',
+				'notes',
+				'git',
+				'vectors',
+				'colors',
+				'music',
+				'sim',
+				'news',
+				'calls',
+				'photos',
+				'db',
+				'fonts',
+				'docs',
+				'video',
+				'capture',
+				'api',
+				'|',
+				'settings',
+				'trash'
+			];
+			const AFTER = ['finder', 'browser', 'mail', 'calendar', 'notes', 'music', '@dev', '@design', '@social', '|', 'settings', 'trash'];
+
+			const running = new Set(['finder', 'browser', 'mail', 'music']);
+			const launched = []; // folder apps opened from a popup, shown in the Dock while running
+
+			const icon = (id, tag = 'span', cls = 'tile') => {
+				const [name, a, b, g, ink] = APPS[id];
+				return `<${tag} class="${cls}${running.has(id) && cls === 'tile' ? ' running' : ''}" data-app="${id}" title="${name}" style="--a:${a};--b:${b}${ink ? ';--ink-c:' + ink : ''}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${G[g]}"/></svg></${tag}>`;
+			};
+			const folderIcon = (key, tag = 'button') => {
+				const f = FOLDERS[key];
+				const open = f.apps.some((id) => running.has(id));
+				const attrs = tag === 'button' ? ` type="button" data-folder="${key}" aria-label="${f.name} folder" aria-expanded="false"` : ' aria-hidden="true"';
+				return `<${tag} class="folder${open ? ' running' : ''}"${attrs}><span class="folder-bg"></span><span class="mini">${f.apps
+					.slice(0, 9)
+					.map((id) => icon(id, 'i', 'cell'))
+					.join('')}</span></${tag}>`;
+			};
+
+			const stage = document.getElementById('stage');
+			const dock = document.getElementById('dock');
+			const popup = document.getElementById('popup');
+			const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+			let state = 'before';
+			let openKey = null;
+
+			function render() {
+				let items = state === 'before' ? BEFORE : AFTER;
+				if (state === 'after' && launched.length) {
+					const i = items.indexOf('|');
+					items = [...items.slice(0, i), ...launched, ...items.slice(i)];
+				}
+				dock.style.setProperty('--n', items.length);
+				dock.innerHTML = items
+					.map((it) =>
+						it === '|' ? '<span class="sep"></span>'
+						: it[0] === '@' ? folderIcon(it.slice(1))
+						: icon(it)
+					)
+					.join('');
+				document.querySelectorAll('.switch button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.state === state));
+			}
+
+			// Move every app from where it was to where it is now (FLIP), so the
+			// cluttered Dock visibly collapses into folders and back out again.
+			function setState(next, animate = true) {
+				if (next === state) return;
+				closePopup();
+				const first = new Map();
+				dock.querySelectorAll('[data-app]').forEach((el) => first.set(el.dataset.app, el.getBoundingClientRect()));
+				const dockBefore = dock.getBoundingClientRect();
+				state = next;
+				render();
+				if (!animate || reduceMotion) return;
+
+				const dockAfter = dock.getBoundingClientRect();
+				const timing = { duration: 720, easing: 'cubic-bezier(.2,.8,.2,1)' };
+				dock.animate(
+					[
+						{ width: dockBefore.width + 'px', height: dockBefore.height + 'px' },
+						{ width: dockAfter.width + 'px', height: dockAfter.height + 'px' }
+					],
+					timing
+				);
+				dock.querySelectorAll('[data-app]').forEach((el, i) => {
+					const a = first.get(el.dataset.app);
+					if (!a) return;
+					const b = el.getBoundingClientRect();
+					el.animate(
+						[
+							{ transformOrigin: 'top left', transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${a.width / b.width})` },
+							{ transformOrigin: 'top left', transform: 'none' }
+						],
+						{ ...timing, delay: i * 12, fill: 'backwards' }
+					);
+				});
+				dock.querySelectorAll('.folder-bg').forEach((el) =>
+					el.animate(
+						[
+							{ opacity: 0, transform: 'scale(.6)' },
+							{ opacity: 1, transform: 'none' }
+						],
+						{ ...timing, delay: 220, fill: 'backwards' }
+					)
+				);
+			}
+
+			function placePopup() {
+				if (!openKey) return;
+				const btn = dock.querySelector(`[data-folder="${openKey}"]`);
+				const s = stage.getBoundingClientRect(),
+					b = btn.getBoundingClientRect();
+				const w = popup.offsetWidth;
+				const cx = b.left - s.left + b.width / 2;
+				const left = Math.max(10, Math.min(cx - w / 2, s.width - w - 10));
+				popup.style.left = left + 'px';
+				popup.style.bottom = s.bottom - b.top + 16 + 'px';
+				popup.style.setProperty('--tail', cx - left + 'px');
+			}
+
+			function openPopup(key) {
+				const f = FOLDERS[key];
+				openKey = key;
+				popup.querySelector('.popup-title').textContent = f.name;
+				popup.querySelector('.popup-grid').innerHTML = f.apps.map((id) => `<button type="button" class="pop-app" data-launch="${id}">${icon(id)}<span>${APPS[id][0]}</span></button>`).join('');
+				placePopup();
+				popup.classList.add('is-open');
+				dock.querySelector(`[data-folder="${key}"]`).setAttribute('aria-expanded', 'true');
+			}
+
+			function closePopup() {
+				if (!openKey) return;
+				const btn = dock.querySelector(`[data-folder="${openKey}"]`);
+				if (btn) btn.setAttribute('aria-expanded', 'false');
+				popup.classList.remove('is-open');
+				openKey = null;
+			}
+
+			function launch(id) {
+				closePopup();
+				const isNew = !running.has(id);
+				running.add(id);
+				if (!launched.includes(id)) launched.push(id);
+				render();
+				const tile = dock.querySelector(`.tile[data-app="${id}"]`);
+				if (tile && isNew) {
+					tile.classList.add('bounce');
+					tile.addEventListener('animationend', () => tile.classList.remove('bounce'), { once: true });
+				}
+			}
+
+			// One-time intro: start cluttered, tidy into folders, then open one.
+			const timers = [];
+			const stopIntro = () => timers.splice(0).forEach(clearTimeout);
+
+			dock.addEventListener('click', (e) => {
+				const btn = e.target.closest('[data-folder]');
+				if (!btn) return;
+				stopIntro();
+				const key = btn.dataset.folder;
+				if (openKey === key) closePopup();
+				else {
+					closePopup();
+					openPopup(key);
+				}
+			});
+			popup.addEventListener('click', (e) => {
+				const b = e.target.closest('[data-launch]');
+				if (b) launch(b.dataset.launch);
+			});
+			document.querySelectorAll('.switch button').forEach((b) =>
+				b.addEventListener('click', () => {
+					stopIntro();
+					setState(b.dataset.state);
+				})
+			);
+			document.addEventListener('keydown', (e) => {
+				if (e.key !== 'Escape' || !openKey) return;
+				const key = openKey;
+				closePopup();
+				dock.querySelector(`[data-folder="${key}"]`)?.focus();
+			});
+			document.addEventListener('pointerdown', (e) => {
+				if (openKey && !popup.contains(e.target) && !e.target.closest('[data-folder]')) closePopup();
+			});
+			addEventListener('resize', placePopup);
+
+			render();
+			if (reduceMotion) {
+				setState('after', false);
+				openPopup('dev');
+			} else {
+				timers.push(setTimeout(() => setState('after'), 1400));
+				timers.push(setTimeout(() => openPopup('dev'), 2600));
+			}
+
+			// Static illustrations that reuse the same icons.
+			document.querySelectorAll('[data-folder-icon]').forEach((el) => {
+				el.insertAdjacentHTML('afterbegin', folderIcon(el.dataset.folderIcon, 'span'));
+			});
+			document.querySelectorAll('[data-big-folder]').forEach((el) => {
+				el.innerHTML = folderIcon(el.dataset.bigFolder, 'span');
+			});
+			document.querySelectorAll('[data-list]').forEach((el) => {
+				el.innerHTML = FOLDERS[el.dataset.list].apps
+					.slice(0, 5)
+					.map(
+						(id) =>
+							`<div class="list-row"><span class="grip"></span>${icon(id)}<span>${APPS[id][0]}</span><span class="path">/Applications/${APPS[id][0].replace(' ', '')}.app</span></div>`
+					)
+					.join('');
+				el.querySelectorAll('.running').forEach((t) => t.classList.remove('running'));
+			});
+			document.querySelectorAll('[data-dots-popup]').forEach((el) => {
+				const open = new Set(['editor', 'terminal', 'docs']);
+				el.innerHTML = `<p class="popup-title">Dev</p><div class="popup-grid">${FOLDERS.dev.apps
+					.slice(0, 6)
+					.map((id) => `<span class="pop-app">${icon(id).replace('class="tile', `class="tile${open.has(id) ? ' running' : ''}`)}<span>${APPS[id][0]}</span></span>`)
+					.join('')}</div>`;
+			});
+
+			// Copy buttons for the Homebrew commands.
+			document.querySelectorAll('[data-copy]').forEach((btn) =>
+				btn.addEventListener('click', async () => {
+					try {
+						await navigator.clipboard.writeText(btn.dataset.copy);
+						btn.textContent = 'Copied';
+						btn.classList.add('done');
+						setTimeout(() => {
+							btn.textContent = 'Copy';
+							btn.classList.remove('done');
+						}, 1600);
+					} catch {
+						/* clipboard unavailable; the command is still selectable */
+					}
+				})
+			);
+
+			// Point the download buttons at the latest Dokr DMG in the tap's releases.
+			fetch('https://api.github.com/repos/uraxdev/homebrew-tap/releases?per_page=30')
+				.then((r) => (r.ok ? r.json() : []))
+				.then((list) => {
+					const rel = list.find((r) => /^dokr-v/.test(r.tag_name) && !r.draft && !r.prerelease);
+					if (!rel) return;
+					const url = `https://github.com/uraxdev/homebrew-tap/releases/download/${rel.tag_name}/Dokr.dmg`;
+					document.querySelectorAll('a.download').forEach((a) => {
+						a.href = url;
+					});
+					document.querySelectorAll('.version').forEach((el) => {
+						el.textContent = ` Latest version: ${rel.tag_name.replace(/^dokr-v/, '')}.`;
+					});
+				})
+				.catch(() => {});
+		</script>
+	</body>
+</html>
